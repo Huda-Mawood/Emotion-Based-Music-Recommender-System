@@ -9,16 +9,11 @@
 
 1. Project Overview  
 2. Model Selection Process  
-   2.1 ResNet50  
-   2.2 Xception (Pretrained on FER2013)  
-   2.3 ResNet (Pretrained on FER2013)  
-   2.4 EfficientNetB0 Model  
-   2.5 EfficientNetB3 Model  
 3. Dataset Structure  
 4. Data Preprocessing  
 5. Model Architecture  
 6. Training Configuration  
-7. Model Evaluation  
+7. Model Evaluation and Final Model Choice  
 8. Emotion Prediction from Image  
 9. Music Recommendation System  
 10. Graphical User Interface (GUI)  
@@ -31,47 +26,153 @@
 
 ## 1 Project Overview
 
-This system detects emotions from human facial expressions using a deep learning model, then plays music based on the predicted emotion. The goal is to provide a mood-aware recommendation experience that connects emotion recognition with audio response.
+This system detects emotions from human facial expressions using deep learning, then recommends music based on the predicted emotion. The goal is to provide a personalized mood-aware music experience.
 
 ---
 
 ## 2 Model Selection Process
 
-We tested several deep learning models with different datasets and configurations. Below is a summary of our experimentation process.
+We experimented with multiple deep learning models, including:
 
-### 2.1 ResNet50
-- Model: ResNet50.h5  
-- Dataset: Custom (841 images)  
-- Source: Preprocessed dataset from Roboflow: https://universe.roboflow.com/hipster-pi5hv/custom-workflow-object-detection-kuaeb  
-- Problem: Overfitting due to limited data. Validation accuracy was poor.
+- ResNet50 trained on a custom dataset (841 images)  
+- Xception pretrained on FER2013  
+- ResNet pretrained on FER2013  
+- EfficientNetB3 fine-tuned on a translated Roboflow dataset  
+- EfficientNetB0 trained on AffectNet  
 
-### 2.2 Xception (Pretrained on FER2013)
-- Model: Xception.h5  
-- Dataset: FER2013  
-- Source: https://www.kaggle.com/datasets/msambare/fer2013  
-- Issue: Poor generalization despite using data augmentation and optimizer tuning.
+Among these, **EfficientNetB0** was chosen as the final model due to its:
 
-### 2.3 ResNet (Pretrained on FER2013)
-- Model: resnet-fer2013.h5  
-- Dataset: FER2013  
-- Observation: Continued misclassifications, especially with similar expressions like sad and neutral.
+- Stable and consistent predictions  
+- Balanced performance across emotion classes  
+- Suitability for real-time deployment with reasonable computational cost  
 
-### 2.4 EfficientNetB0 Model
-- Model: EfficientNetB0.h5  
-- Dataset: AffectNet  
-- Source: https://www.kaggle.com/datasets/mstjebashazida/affectnet  
-- Performance: Most stable predictions  
-- Selected as final model
-
-### 2.5 EfficientNetB3 Model
-- Model: EfficientNetB3.h5  
-- Dataset: Translated and structured Roboflow dataset (Spanish to English)  
-- Source: https://universe.roboflow.com/reconocimiento-facial-irbfo/emociones-qbf5i  
-- Result: Handled more classes with fine-tuned precision, especially in expressions with subtle variations.
+This selection was based on quantitative evaluations including accuracy, loss, and class-wise precision and recall.
 
 ---
 
 ## 3 Dataset Structure
 
-Our primary training dataset is organized by emotion class:
+The primary dataset is organized by emotion classes as follows:
 
+dataset
+├── Train
+│ ├── happy
+│ ├── sad
+│ ├── angry
+│ ├── neutral
+│ ├── fear
+│ ├── surprise
+│ ├── contempt
+│ └── disgust
+
+
+---
+
+## 4 Data Preprocessing
+
+Applied data augmentation and preprocessing including:
+
+- Image rescaling to [0,1]  
+- Rotation, zoom, and shift transformations  
+- Horizontal flips  
+- Validation split of 15%
+
+---
+
+## 5 Model Architecture
+
+- Base: EfficientNetB0 (include_top=True)  
+- GlobalAveragePooling2D  
+- Dropout layers (0.5 and 0.3)  
+- Dense layer with 128 units and ReLU activation  
+- Final Dense layer with Softmax activation for classification  
+
+---
+
+## 6 Training Configuration
+
+- Optimizer: Adam (learning rate = 1e-5)  
+- Loss: Categorical Crossentropy  
+- Epochs: 15  
+- Batch Size: 32  
+- Class weights calculated to address class imbalance  
+
+---
+
+## 7 Model Evaluation and Final Model Choice
+
+- Final validation accuracy reached approximately 61%  
+- Confusion mainly between subtle emotions like neutral, sad, and contempt  
+- Model showed good performance in real-time webcam testing with low latency (~1.5 sec per frame)  
+- EfficientNetB0 balanced accuracy and computational efficiency, making it ideal for integration  
+
+---
+
+## 8 Emotion Prediction from Image
+
+The model takes a facial image input, processes it through the CNN, and outputs the predicted emotion. This emotion is then mapped to corresponding music genres.
+
+---
+
+## 9 Music Recommendation System
+
+| Emotion  | Recommended Music Genres      |
+|----------|------------------------------|
+| Anger    | Rock, Metal                  |
+| Contempt | Classical, Jazz              |
+| Disgust  | Metal, Rock                  |
+| Fear     | Classical                   |
+| Happy    | Pop, Disco                  |
+| Neutral  | Hip-Hop, Reggae             |
+| Sad      | Blues, Jazz                 |
+| Surprise | Pop, Disco                  |
+
+---
+
+## 10 Graphical User Interface (GUI)
+
+Built using tkinter, the GUI:
+
+- Displays the detected emotion  
+- Shows recommended music tracks  
+- Allows user to play or stop tracks  
+
+---
+
+## 11 Real-time Webcam Detection
+
+- Captures live frames using OpenCV  
+- Performs emotion prediction in real-time  
+- Displays results through the GUI  
+
+---
+
+## 12 Libraries Used
+
+- TensorFlow, Keras  
+- OpenCV  
+- Numpy, Matplotlib, Seaborn  
+- Tkinter  
+- Pygame  
+
+---
+
+## 13 Conclusion
+
+Through comprehensive experimentation, EfficientNetB0 was identified as the optimal model balancing accuracy and speed. Our system effectively connects facial emotion recognition with personalized music recommendations in real time. Future improvements include expanding the dataset diversity and enhancing accuracy for subtle emotions.
+
+---
+
+## 14 References
+
+- DeepFace Library: https://github.com/serengil/deepface  
+- EfficientNetB0 Dataset (AffectNet via Kaggle): https://www.kaggle.com/datasets/mstjebashazida/affectnet  
+- FER2013 Dataset: https://www.kaggle.com/datasets/msambare/fer2013  
+- Roboflow Dataset for ResNet50: https://universe.roboflow.com/hipster-pi5hv/custom-workflow-object-detection-kuaeb  
+- Roboflow Dataset for EfficientNetB3: https://universe.roboflow.com/reconocimiento-facial-irbfo/emociones-qbf5i  
+- EfficientNet Paper: https://arxiv.org/abs/1905.11946  
+- Xception Paper: https://arxiv.org/abs/1610.02357  
+- OpenCV Haar Cascades: https://github.com/opencv/opencv/tree/master/data/haarcascades  
+- TensorFlow: https://www.tensorflow.org/  
+- Keras: https://keras.io/  
+- Pygame Documentation: https://www.pygame.org/docs/
